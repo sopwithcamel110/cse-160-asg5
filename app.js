@@ -2,18 +2,71 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
 
 function main() {
 
 	const canvas = document.querySelector( '#c' );
-	const renderer = new THREE.WebGLRenderer( { antialias: true, canvas } );
-
+	const renderer = new THREE.WebGLRenderer( {
+		canvas,
+		logarithmicDepthBuffer: true,
+		antialias: true
+	} );
 	const fov = 45;
 	const aspect = 2; // the canvas default
-	const near = 0.1;
+	const near = 0.00001;
 	const far = 100;
 	const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
-	camera.position.set( 0, 10, 20 );
+	camera.position.set( 10, 6, 10 );
+
+	class MinMaxGUIHelper {
+
+		constructor( obj, minProp, maxProp, minDif ) {
+
+			this.obj = obj;
+			this.minProp = minProp;
+			this.maxProp = maxProp;
+			this.minDif = minDif;
+
+		}
+		get min() {
+
+			return this.obj[ this.minProp ];
+
+		}
+		set min( v ) {
+
+			this.obj[ this.minProp ] = v;
+			this.obj[ this.maxProp ] = Math.max( this.obj[ this.maxProp ], v + this.minDif );
+
+		}
+		get max() {
+
+			return this.obj[ this.maxProp ];
+
+		}
+		set max( v ) {
+
+			this.obj[ this.maxProp ] = v;
+			this.min = this.min; // this will call the min setter
+
+		}
+
+	}
+
+	function updateCamera() {
+
+		camera.updateProjectionMatrix();
+
+	}
+
+	const gui = new GUI();
+	gui.add( camera, 'fov', 1, 180 ).onChange( updateCamera );
+	const minMaxGUIHelper = new MinMaxGUIHelper( camera, 'near', 'far', 0.1 );
+	gui.add( minMaxGUIHelper, 'min', 0.00001, 50, 0.00001 ).name( 'near' ).onChange( updateCamera );
+	gui.add( minMaxGUIHelper, 'max', 0.1, 50, 0.1 ).name( 'far' ).onChange( updateCamera );
+
 
 	const controls = new OrbitControls( camera, canvas );
 	controls.target.set( 0, 5, 0 );
@@ -46,26 +99,6 @@ function main() {
 
 	}
 
-	{
-
-		const skyColor = 0xB1E1FF; // light blue
-		const groundColor = 0xB97A20; // brownish orange
-		const intensity = 3;
-		const light = new THREE.HemisphereLight( skyColor, groundColor, intensity );
-		scene.add( light );
-
-	}
-
-	{
-
-		const color = 0xFFFFFF;
-		const intensity = 3;
-		const light = new THREE.DirectionalLight( color, intensity );
-		light.position.set( 5, 10, 2 );
-		scene.add( light );
-		scene.add( light.target );
-
-	}
 
 	function frameArea( sizeToFitOnScreen, boxSize, boxCenter, camera ) {
 
@@ -104,7 +137,7 @@ function main() {
 			const objLoader = new OBJLoader();
 			objLoader.setMaterials( mtl );
 			objLoader.load( 'model.obj', ( root ) => {
-
+				root.position.set(0,0.11,0)
 				scene.add( root );
 
 				// compute the box that contains all the stuff
@@ -125,6 +158,112 @@ function main() {
 			} );
 
 		} );
+
+	}
+
+	{
+
+		const skyColor = 0xB1E1FF; // light blue
+		const groundColor = 0xB97A20; // brownish orange
+		const intensity = 0.1;
+		const light = new THREE.HemisphereLight( skyColor, groundColor, intensity );
+		scene.add( light );
+
+	}
+
+	{
+
+		const color = 0xFFFFFF;
+		const intensity = 1;
+		const light = new THREE.DirectionalLight( color, intensity );
+		light.position.set( 5, 10, 2 );
+		scene.add( light );
+		scene.add( light.target );
+
+	}
+	class ColorGUIHelper {
+
+		constructor( object, prop ) {
+
+			this.object = object;
+			this.prop = prop;
+
+		}
+		get value() {
+
+			return `#${this.object[ this.prop ].getHexString()}`;
+
+		}
+		set value( hexString ) {
+
+			this.object[ this.prop ].set( hexString );
+
+		}
+
+	}
+
+	class DegRadHelper {
+
+		constructor( obj, prop ) {
+
+			this.obj = obj;
+			this.prop = prop;
+
+		}
+		get value() {
+
+			return THREE.MathUtils.radToDeg( this.obj[ this.prop ] );
+
+		}
+		set value( v ) {
+
+			this.obj[ this.prop ] = THREE.MathUtils.degToRad( v );
+
+		}
+
+	}
+
+	function makeXYZGUI( gui, vector3, name, onChangeFn ) {
+
+		const folder = gui.addFolder( name );
+		folder.add( vector3, 'x', - 10, 10 ).onChange( onChangeFn );
+		folder.add( vector3, 'y', 0, 10 ).onChange( onChangeFn );
+		folder.add( vector3, 'z', - 10, 10 ).onChange( onChangeFn );
+		folder.open();
+
+	}
+
+	{
+
+		const color = 0xFFFFFF;
+		const intensity = 84;
+		const light = new THREE.SpotLight( color, intensity );
+		light.position.set( 2.38, 3.12, 0.66 );
+		light.target.position.set( -1.06, 0, 0.9 );
+		scene.add( light );
+		scene.add( light.target );
+
+		const helper = new THREE.SpotLightHelper( light );
+		scene.add( helper );
+
+		function updateLight() {
+
+			light.target.updateMatrixWorld();
+			helper.update();
+
+		}
+
+		updateLight();
+
+		const gui = new GUI();
+		gui.addColor( new ColorGUIHelper( light, 'color' ), 'value' ).name( 'color' );
+		gui.add( light, 'intensity', 0, 250, 1 );
+		gui.add( light, 'distance', 0, 40 ).onChange( updateLight );
+		gui.add( new DegRadHelper( light, 'angle' ), 'value', 0, 90 ).name( 'angle' ).onChange( updateLight );
+		gui.add( light, 'penumbra', 0, 1, 0.01 );
+
+		makeXYZGUI( gui, light.position, 'position', updateLight );
+		makeXYZGUI( gui, light.target.position, 'target', updateLight );
 
 	}
 
