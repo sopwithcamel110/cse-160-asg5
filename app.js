@@ -75,29 +75,29 @@ function main() {
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color( 'black' );
 
-	{
+	// {
 
-		const planeSize = 4000;
+	// 	const planeSize = 4000;
 
-		const loader = new THREE.TextureLoader();
-		const texture = loader.load( 'https://threejs.org/manual/examples/resources/images/checker.png' );
-		texture.colorSpace = THREE.SRGBColorSpace;
-		texture.wrapS = THREE.RepeatWrapping;
-		texture.wrapT = THREE.RepeatWrapping;
-		texture.magFilter = THREE.NearestFilter;
-		const repeats = planeSize / 200;
-		texture.repeat.set( repeats, repeats );
+	// 	const loader = new THREE.TextureLoader();
+	// 	const texture = loader.load( 'https://threejs.org/manual/examples/resources/images/checker.png' );
+	// 	texture.colorSpace = THREE.SRGBColorSpace;
+	// 	texture.wrapS = THREE.RepeatWrapping;
+	// 	texture.wrapT = THREE.RepeatWrapping;
+	// 	texture.magFilter = THREE.NearestFilter;
+	// 	const repeats = planeSize / 200;
+	// 	texture.repeat.set( repeats, repeats );
 
-		const planeGeo = new THREE.PlaneGeometry( planeSize, planeSize );
-		const planeMat = new THREE.MeshPhongMaterial( {
-			map: texture,
-			side: THREE.DoubleSide,
-		} );
-		const mesh = new THREE.Mesh( planeGeo, planeMat );
-		mesh.rotation.x = Math.PI * - .5;
-		scene.add( mesh );
+	// 	const planeGeo = new THREE.PlaneGeometry( planeSize, planeSize );
+	// 	const planeMat = new THREE.MeshPhongMaterial( {
+	// 		map: texture,
+	// 		side: THREE.DoubleSide,
+	// 	} );
+	// 	const mesh = new THREE.Mesh( planeGeo, planeMat );
+	// 	mesh.rotation.x = Math.PI * - .5;
+	// 	scene.add( mesh );
 
-	}
+	// }
 
 
 	function frameArea( sizeToFitOnScreen, boxSize, boxCenter, camera ) {
@@ -159,6 +159,48 @@ function main() {
 
 		} );
 
+	}
+
+	{
+
+		const loader = new THREE.TextureLoader();
+		const texture = loader.load(
+			'back.jpeg',
+			() => {
+
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+				texture.colorSpace = THREE.SRGBColorSpace;
+				scene.background = texture;
+
+			} );
+
+	}
+
+	const boxGeom = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+
+	function makeCube( color, x , y, z) {
+
+		const material = new THREE.MeshPhongMaterial( { color } );
+
+		const cube = new THREE.Mesh( boxGeom, material );
+		scene.add( cube );
+
+		cube.position.x = x;
+		cube.position.y = y
+		cube.position.z = z
+
+		return cube;
+
+	}
+
+	// Make plate
+	function toDegrees (angle) {
+		return angle * (180 / Math.PI);
+	  }
+	for (let R = 0.1; R < 0.4; R += 0.1) {
+		for (let i = 0; i < 360; i++) {
+			makeCube(0xffffff, Math.cos(i)*R,-0.1,Math.sin(i)*R)
+		}
 	}
 
 	{
