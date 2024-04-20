@@ -176,6 +176,40 @@ function main() {
 
 	}
 
+	{
+		const sphereRadius = 1;
+		const sphereWidthDivisions = 32;
+		const sphereHeightDivisions = 16;
+		const sphereGeo = new THREE.SphereGeometry(sphereRadius, sphereWidthDivisions, sphereHeightDivisions);
+		const sphereMat = new THREE.MeshPhongMaterial({color: '#8d5107'});
+		const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.position.set(0, 3, 0);
+		scene.add(mesh);
+	}
+
+	{
+		const coneGeom = new THREE.ConeGeometry(
+			1, 1, 12
+		);
+		const coneMat = new THREE.MeshPhongMaterial({color: 'green'});
+		const root = new THREE.Object3D();
+		const cone = new THREE.Mesh(coneGeom, coneMat);
+		cone.position.y = 2
+		root.add(cone);
+
+		root.position.set(0, 0, 0);
+		scene.add(root);
+
+	}
+	const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+	const material = new THREE.MeshPhongMaterial( { color: 0x44aa88 } ); // greenish blue
+
+	const cube = new THREE.Mesh( geometry, material );
+	cube.position.y = 1
+	scene.add( cube );
+
 	const boxGeom = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
 
 	function makeCube( color, x , y, z) {
@@ -325,7 +359,7 @@ function main() {
 
 	}
 
-	function render() {
+	function render(time) {
 
 		if ( resizeRendererToDisplaySize( renderer ) ) {
 
@@ -334,6 +368,10 @@ function main() {
 			camera.updateProjectionMatrix();
 
 		}
+		time *= 0.001; // convert time to seconds
+
+		cube.rotation.x = time;
+		cube.rotation.y = time;
 
 		renderer.render( scene, camera );
 
